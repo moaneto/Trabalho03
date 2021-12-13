@@ -1,0 +1,183 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento</title>
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <!-- CSS only -->
+    <!--Icones-->
+    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+        integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+
+</head>
+
+<body onload="popularTabela()">
+    <!----------cabeçalho agendamento---------->
+    <div class="jumbotron m-3">
+        <h1 class="display-4">Agendamento</h1>
+        <p class="lead">Confira abaixo os horarios disponiveis cadastrados</p>
+
+    </div>
+    <!----------cabeçalho agendamento---------->
+
+    <!----------COMEÇO DO FORMULARIO---------->
+    <div class="container">
+        <div class="card mb-3 p-3">
+            <form class="row">
+                <div class="form-group col mb-5">
+                    <label>Equipamento:</label>
+                    <input type="checkbox" id="equipamento" name="equipamento" value="sim">
+                </div>
+                <div class="form-group col mb-5">
+                    <label>Dia:</label>
+                    <input type="date" class="form-control" id="DiaInput" placeholder="Digite o Dia">
+                </div>
+                <div class="form-group col mb-5">
+                    <label>Hora:</label>
+                    <input type="time" class="form-control" id="HoraInput" placeholder="Digite a Hora">
+                </div>
+                <div>
+                    <button class="form-group btn btn-primary btn-lg col mb-2 w-100 " onclick="SalveAgenda()">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!----------FINAL DO FORMULARIO---------->
+
+
+    <!--------COMEÇO DA TABELA DE HORARIOS-------->
+    <div class="container">
+        <table class="table" id="corpoTabela_agendamento">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col" width="5%">#</th>
+                    <th scope="col">Dia</th>
+                    <th scope="col">Hora</th>
+                    <th scope="col">Equipamento</th>
+                    <th scope="col" width="15%"></th>
+                    <th scope="col" width="15%"></th>
+                </tr>
+            </thead>
+            <tbody id="corpo_corpoTabela_agendamento"></tbody>
+        </table>
+    </div>
+    <!--------FINAL DA TABELA DE HORARIOS-------->
+
+    <!--coneção com o banco-->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
+        import { getDatabase, onValue, ref, set, get, update, child } from "https://www.gstatic.com/firebasejs/9.6.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCjZvXxLS_EFhu-zVay1l9ujkbW7gRRa10",
+            authDomain: "bancodedados-e9152.firebaseapp.com",
+            databaseURL: "https://bancodedados-e9152-default-rtdb.firebaseio.com/",
+            projectId: "bancodedados-e9152",
+            storageBucket: "bancodedados-e9152.appspot.com",
+            messagingSenderId: "862320454557",
+            appId: "1:862320454557:web:1283b7e4485468ecfa9d74"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const _db = getDatabase(app);
+
+        window.firebase = app;
+        window.db = _db;
+
+        window.ref = ref;
+        window.set = set;
+        window.get = get;
+        window.child = child;
+        window.update = update;
+        window.dbRef = ref(_db);
+        window.onValue = onValue;
+    </script>
+    <!--coneção com o banco-->
+
+    <!--Encrementador da corpoTabela-->
+    <script>
+        function SalveAgenda() {
+            const formulario = document.querySelector("form");
+            formulario.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const uniqueKey = new Date().getTime().toString();
+                const data = document.getElementById("DiaInput").value;
+                const hora = document.getElementById("HoraInput").value;
+                const checkbox = document.getElementById("equipamento");
+
+                let equipamento = "";
+                if(checkbox.checked) {
+                    equipamento = "sim";
+                } else {
+                    equipamento = "não";
+                }
+
+                if(!data) {
+                    alert("Erro ao processar solicitação. Informe uma data.");
+                    return false;
+                }
+                if(!hora) {
+                    alert("Erro ao processar solicitação. Informe uma hora.");
+                    return false;
+                }
+
+                const agendamento = {
+                    date: data,
+                    scheduling: hora,
+                    equipament: equipamento
+                };
+
+                set(ref(db, `ItensStory/${uniqueKey}`), agendamento).then((result) => {
+                    alert("Agendamento realizado com sucesso!");
+                    location.reload();
+                }).catch((err) => {
+                    alert(`Ocorreu o seguinte erro: ${err.message}`);
+                })
+            });
+        }
+    </script>
+
+    <script>
+        function popularTabela() {
+            const corpoTabela = document.getElementById("corpo_corpoTabela_agendamento");
+            get(child(dbRef, 'ItensStory')).then((snapshot) => {
+                if (snapshot.exists()) {
+                    Object.keys(snapshot.val()).forEach((key, index) => {
+                        const agendamento = snapshot.val()[key];
+                        corpoTabela.innerHTML += `
+                        <tr>
+                            <th scope="row">${index + 1}</th>
+                            <td>${agendamento.date}</td>
+                            <td>${agendamento.scheduling}</td>
+                            <td>${agendamento.equipament}</td>
+                            <td><button class="btn btn-danger"><i class="far fa-trash-alt"></i> Excluir</button></td>
+                            <td><button class="btn btn-primary"><i class="fas fa-pencil-alt"></i> Editar</button></td>
+                        </tr>
+                        `;
+                    });
+                } else {
+                    corpoTabela.innerHTML = "<tr style='text-align: center;'><td colspan='5'>Nenhum agendamento encontrado.</td><tr>";
+                }
+            }).catch((err) => {
+                alert(`Ocorreu o seguinte erro: ${err.message}`);
+            });
+        }
+    </script>
+ <div>
+    <button class="form-group btn btn-secondary btn-lg col mb-2 w-100 " >
+        <a href="index.html" >Voltar
+    </button>
+</div>
+
+</body>
+
+</html>
